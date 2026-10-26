@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   BarChart3,
@@ -13,6 +13,7 @@ import {
   HeartPulse,
   History,
   Home,
+  Menu,
   Play,
   RefreshCw,
   Settings,
@@ -39,8 +40,11 @@ const NAV: NavItem[] = [
   { href: "/recuperacao", label: "Recuperação", icon: HeartPulse, mobile: true },
   { href: "/exercicios", label: "Exercícios", icon: Dumbbell },
   { href: "/progressao", label: "Progressão", icon: BarChart3 },
-  { href: "/perfil", label: "Perfil", icon: Settings, mobile: true },
+  { href: "/perfil", label: "Perfil", icon: Settings },
 ];
+
+/** Itens que, no celular, ficam dentro do menu "Mais". */
+const MORE_NAV = NAV.filter((n) => !n.mobile);
 
 function isActive(pathname: string, href: string): boolean {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -116,36 +120,81 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
 
         {/* Bottom nav mobile */}
-        {!inWorkout ? (
-          <nav
-            className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 backdrop-blur safe-bottom lg:hidden"
-            aria-label="Navegação inferior"
-          >
-            <div className="mx-auto grid max-w-lg grid-cols-5">
-              {NAV.filter((n) => n.mobile).map((item) => {
-                const active = isActive(pathname, item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
-                      active ? "text-accent" : "text-muted hover:text-fg",
-                    )}
-                    aria-current={active ? "page" : undefined}
-                  >
-                    <item.icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_8px_rgb(var(--accent)/0.6)]")} aria-hidden />
-                    {item.label === "Minha semana" ? "Semana" : item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-        ) : null}
+        {!inWorkout ? <MobileNav pathname={pathname} /> : null}
 
         {!inWorkout ? <ActiveSessionBanner /> : null}
       </div>
     </div>
+  );
+}
+
+function MobileNav({ pathname }: { pathname: string }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreActive = MORE_NAV.some((n) => isActive(pathname, n.href));
+
+  // Fecha o menu ao navegar.
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
+
+  const tabClass = (active: boolean) =>
+    cn("flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors", active ? "text-accent" : "text-muted hover:text-fg");
+
+  return (
+    <>
+      {moreOpen ? (
+        <div className="fixed inset-0 z-30 lg:hidden" role="presentation">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setMoreOpen(false)} aria-hidden />
+          <div
+            role="menu"
+            aria-label="Mais seções"
+            className="absolute inset-x-3 bottom-[76px] rounded-2xl border border-line bg-surface p-2 shadow-2xl animate-fade-up safe-bottom"
+          >
+            {MORE_NAV.map((item) => {
+              const active = isActive(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  role="menuitem"
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors",
+                    active ? "bg-accent/12 text-accent" : "text-fg hover:bg-surface-2",
+                  )}
+                  aria-current={active ? "page" : undefined}
+                >
+                  <item.icon className="h-5 w-5" aria-hidden />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 backdrop-blur safe-bottom lg:hidden" aria-label="Navegação inferior">
+        <div className="mx-auto grid max-w-lg grid-cols-5">
+          {NAV.filter((n) => n.mobile).map((item) => {
+            const active = isActive(pathname, item.href);
+            return (
+              <Link key={item.href} href={item.href} className={tabClass(active)} aria-current={active ? "page" : undefined}>
+                <item.icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_8px_rgb(var(--accent)/0.6)]")} aria-hidden />
+                {item.label === "Minha semana" ? "Semana" : item.label}
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setMoreOpen((v) => !v)}
+            aria-expanded={moreOpen}
+            aria-haspopup="menu"
+            className={tabClass(moreActive || moreOpen)}
+          >
+            {moreOpen ? <X className="h-5 w-5" aria-hidden /> : <Menu className={cn("h-5 w-5", moreActive && "drop-shadow-[0_0_8px_rgb(var(--accent)/0.6)]")} aria-hidden />}
+            Mais
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }
 
