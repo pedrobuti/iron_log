@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   BarChart3,
@@ -132,11 +132,6 @@ function MobileNav({ pathname }: { pathname: string }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreActive = MORE_NAV.some((n) => isActive(pathname, n.href));
 
-  // Fecha o menu ao navegar.
-  useEffect(() => {
-    setMoreOpen(false);
-  }, [pathname]);
-
   const tabClass = (active: boolean) =>
     cn("flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors", active ? "text-accent" : "text-muted hover:text-fg");
 
@@ -157,6 +152,7 @@ function MobileNav({ pathname }: { pathname: string }) {
                   key={item.href}
                   href={item.href}
                   role="menuitem"
+                  onClick={() => setMoreOpen(false)}
                   className={cn(
                     "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors",
                     active ? "bg-accent/12 text-accent" : "text-fg hover:bg-surface-2",

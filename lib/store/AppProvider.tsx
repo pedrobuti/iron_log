@@ -111,7 +111,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isFirstRun, setIsFirstRun] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [mode, setMode] = useState<StorageMode>("local");
-  const [preferLocal, setPreferLocal] = useState(false);
+  const [preferLocal, setPreferLocal] = useState<boolean>(
+    () => typeof window !== "undefined" && window.localStorage.getItem(PREFER_LOCAL_KEY) === "1",
+  );
 
   const adapterRef = useRef<StorageAdapter | null>(null);
   const supabaseRef = useRef<SupabaseClient | null>(null);
@@ -120,13 +122,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const supabaseConfigured = isSupabaseConfigured();
 
-  dataRef.current = data;
+  // Mantém uma referência sempre atual para as ações (que são memoizadas).
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   // ─── Inicialização ───
   useEffect(() => {
     let cancelled = false;
-    const prefer = typeof window !== "undefined" && window.localStorage.getItem(PREFER_LOCAL_KEY) === "1";
-    setPreferLocal(prefer);
+    const prefer = preferLocal;
 
     async function boot(adapter: StorageAdapter) {
       try {

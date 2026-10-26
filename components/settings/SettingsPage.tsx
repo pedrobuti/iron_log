@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Cloud, CloudOff, Download, LogOut, RotateCcw, Save, Trash2, Upload } from "lucide-react";
 import type { Weekday } from "@/types";
@@ -35,7 +35,6 @@ export function SettingsPage() {
     handleSubmit,
     control,
     reset,
-    watch,
     formState: { errors, isDirty },
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -46,7 +45,7 @@ export function SettingsPage() {
     reset(data.settings);
   }, [data.settings, reset]);
 
-  const unit = watch("unit");
+  const unit = useWatch({ control, name: "unit" });
 
   function save(values: SettingsFormValues) {
     actions.updateSettings(values);

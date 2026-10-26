@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Exercise, MuscleGroup } from "@/types";
 import { EQUIPMENTS, MOVEMENT_TYPES, MUSCLE_GROUPS } from "@/types";
@@ -44,7 +44,6 @@ export function ExerciseForm({
     handleSubmit,
     reset,
     control,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseFormSchema),
@@ -74,8 +73,8 @@ export function ExerciseForm({
     );
   }, [open, initial, reset]);
 
-  const primary = watch("primaryMuscle");
-  const measure = watch("measure");
+  const primary = useWatch({ control, name: "primaryMuscle" });
+  const measure = useWatch({ control, name: "measure" });
   const readOnlyCore = Boolean(initial && !initial.isCustom);
 
   return (

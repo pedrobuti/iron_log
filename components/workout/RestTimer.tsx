@@ -78,9 +78,8 @@ export function RestTimer({ duration, onDurationChange, startToken, sound }: Res
     return () => clearInterval(id);
   }, [running, sound]);
 
-  useEffect(() => {
-    if (!running && !started) setRemaining(duration);
-  }, [duration, running, started]);
+  // Antes de iniciar, o mostrador reflete a duração configurada.
+  const shown = started ? remaining : duration;
 
   function pause() {
     setRunning(false);
@@ -97,14 +96,17 @@ export function RestTimer({ duration, onDurationChange, startToken, sound }: Res
     setRemaining(duration);
   }
   function adjust(delta: number) {
+    if (!started) {
+      onDurationChange(Math.max(5, duration + delta));
+      return;
+    }
     const next = Math.max(5, remaining + delta);
     setRemaining(next);
     if (running) endAtRef.current = Date.now() + next * 1000;
-    if (!started) onDurationChange(Math.max(5, duration + delta));
   }
 
   const finished = started && remaining === 0 && !running;
-  const pct = duration > 0 ? (remaining / duration) * 100 : 0;
+  const pct = duration > 0 ? (shown / duration) * 100 : 0;
 
   return (
     <div
@@ -137,7 +139,7 @@ export function RestTimer({ duration, onDurationChange, startToken, sound }: Res
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs text-muted">{finished ? "Descanso concluído — próxima série" : running ? "Descansando" : started ? "Pausado" : "Descanso"}</p>
-        <p className={cn("text-2xl font-bold tabular leading-none", finished && "text-warn")}>{formatDuration(remaining)}</p>
+        <p className={cn("text-2xl font-bold tabular leading-none", finished && "text-warn")}>{formatDuration(shown)}</p>
       </div>
       <div className="flex items-center gap-1">
         <Button variant="ghost" size="icon" aria-label="Menos 15 segundos" onClick={() => adjust(-15)}>

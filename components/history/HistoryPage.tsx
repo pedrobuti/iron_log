@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { addMonths, eachDayOfInterval, endOfMonth, format, getISODay, isSameMonth, parseISO, startOfMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -57,13 +57,17 @@ function HistoryContent() {
   const [muscle, setMuscle] = useState<MuscleGroup | "">("");
   const [month, setMonth] = useState(startOfMonth(now));
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(searchParams.get("sessao"));
+  const [openIdState, setOpenIdState] = useState<string | null>(null);
+  const [dismissedParam, setDismissedParam] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<WorkoutSession | null>(null);
 
-  useEffect(() => {
-    const id = searchParams.get("sessao");
-    if (id) setOpenId(id);
-  }, [searchParams]);
+  // A sessão aberta vem do estado local ou do parâmetro ?sessao= (até ser fechado).
+  const paramId = searchParams.get("sessao");
+  const openId = openIdState ?? (paramId && paramId !== dismissedParam ? paramId : null);
+  const setOpenId = (id: string | null) => {
+    setOpenIdState(id);
+    if (id === null && paramId) setDismissedParam(paramId);
+  };
 
   const completed = useMemo(() => completedSessions(sessions).reverse(), [sessions]);
 

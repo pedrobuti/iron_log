@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Check, ChevronDown, ChevronUp, Eye, History, Lightbulb, Plus, Repeat, SkipForward, Trash2, Undo2, X } from "lucide-react";
 import { ExerciseDemoDialog } from "@/components/exercises/ExerciseDemoDialog";
 import type { Exercise, SessionExercise, SetLog, Settings } from "@/types";
@@ -365,13 +365,16 @@ function NumberCell({
   disabled?: boolean;
 }) {
   const [text, setText] = useState(value === null ? "" : String(value));
-  useEffect(() => {
+  const [lastValue, setLastValue] = useState(value);
+  // Sincroniza o texto quando o valor muda externamente (ex.: aplicar sugestão de carga).
+  if (value !== lastValue) {
+    setLastValue(value);
     const parsed = parseNumberInput(text);
     if (value === null && text !== "") setText("");
     else if (value !== null && parsed !== value) setText(String(value));
-  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
-  const display = useMemo(() => text, [text]);
+  const display = text;
 
   return (
     <input
