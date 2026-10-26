@@ -1,0 +1,13 @@
+{
+  "name": "IronLog — Treino e progressão",
+  "short_name": "IronLog",
+  "description": "Acompanhamento de treinos de musculação com foco em hipertrofia.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090a0c",
+  "theme_color": "#090a0c",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
