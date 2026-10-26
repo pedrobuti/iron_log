@@ -41,7 +41,10 @@ const config: Config = {
         },
       },
       animation: {
-        "fade-up": "fade-up 0.35s ease-out both",
+        // `backwards` (não `both`): ao terminar, nenhum transform fica no elemento.
+        // Um transform residual faria descendentes `position: fixed` (diálogos, cronômetro)
+        // se posicionarem em relação ao contêiner em vez da janela.
+        "fade-up": "fade-up 0.35s ease-out backwards",
         "pulse-soft": "pulse_soft 1.6s ease-in-out infinite",
       },
     },

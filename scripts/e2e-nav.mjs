@@ -27,6 +27,22 @@ try {
   const menuGone = (await page.getByRole("menu").count()) === 0;
   check("navega para Exercícios e fecha o menu", menuGone);
   await page.screenshot({ path: OUT + "11-exercicios-mobile.png" });
+
+  // Diálogo deve aparecer na área visível mesmo com a página rolada até o fim.
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForTimeout(300);
+  const cards = page.locator("li.card button").filter({ hasText: /./ });
+  await cards.last().click();
+  const dlg = page.getByRole("dialog");
+  await dlg.waitFor();
+  await page.waitForTimeout(400);
+  const box = await dlg.boundingBox();
+  const vp = page.viewportSize();
+  const visible = box && box.y >= 0 && box.y + box.height <= vp.height + 1 && box.x >= 0 && box.x + box.width <= vp.width + 1;
+  check("diálogo de exercício visível na janela com página rolada", Boolean(visible), JSON.stringify(box));
+  await page.screenshot({ path: OUT + "12-dialogo-rolado.png" });
+  await page.keyboard.press("Escape");
+  await dlg.waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Mais" }).click();
   await page.getByRole("menuitem", { name: "Perfil" }).click();
   await page.waitForURL(/\/perfil/);

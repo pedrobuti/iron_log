@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
@@ -59,9 +60,11 @@ export function Dialog({ open, onClose, title, description, children, footer, si
     };
   }, [open]);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
+  // Portal no <body>: garante posicionamento em relação à janela, independentemente
+  // de transforms/overflow nos ancestrais da página.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="presentation">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-[fade-up_0.2s_ease-out]" onClick={onClose} aria-hidden />
       <div
@@ -90,7 +93,8 @@ export function Dialog({ open, onClose, title, description, children, footer, si
         <div className="overflow-y-auto px-5 py-4">{children}</div>
         {footer ? <div className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3 safe-bottom">{footer}</div> : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

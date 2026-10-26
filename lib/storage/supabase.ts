@@ -27,6 +27,11 @@ export class SupabaseStorageAdapter implements StorageAdapter {
   }
 
   async setItem<K extends StorageKey>(key: K, value: AppData[K]): Promise<void> {
+    // A coluna `data` é NOT NULL: um valor nulo (ex.: nenhuma sessão ativa) remove a linha.
+    if (value === null) {
+      await this.removeItem(key);
+      return;
+    }
     const { error } = await this.client.from("user_documents").upsert(
       {
         user_id: this.userId,
