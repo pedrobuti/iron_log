@@ -29,7 +29,7 @@ import {
   type StorageAdapter,
   type StorageMode,
 } from "@/lib/storage";
-import { getSupabaseClient, isSupabaseConfigured, supabaseConfigWarning } from "@/lib/supabase/client";
+import { getSupabaseClient, isLocalModeAllowed, isSupabaseConfigured, supabaseConfigWarning } from "@/lib/supabase/client";
 import { createBackup, parseBackup, type ImportResult } from "@/lib/backup";
 import type { BackupFile } from "@/lib/validation/schemas";
 
@@ -84,6 +84,8 @@ export interface AppContextValue {
   data: AppData;
   mode: StorageMode;
   supabaseConfigured: boolean;
+  /** false quando a conta é obrigatória (Supabase configurado sem NEXT_PUBLIC_ALLOW_LOCAL_MODE). */
+  localModeAllowed: boolean;
   user: AuthUser | null;
   issues: string[];
   saveError: string | null;
@@ -111,8 +113,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isFirstRun, setIsFirstRun] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [mode, setMode] = useState<StorageMode>("local");
+  const localModeAllowed = isLocalModeAllowed();
   const [preferLocal, setPreferLocal] = useState<boolean>(
-    () => typeof window !== "undefined" && window.localStorage.getItem(PREFER_LOCAL_KEY) === "1",
+    () => localModeAllowed && typeof window !== "undefined" && window.localStorage.getItem(PREFER_LOCAL_KEY) === "1",
   );
 
   const adapterRef = useRef<StorageAdapter | null>(null);
@@ -441,12 +444,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (client) await client.auth.signOut();
       },
       useLocalModeInstead: () => {
+        if (!localModeAllowed) return;
         window.localStorage.setItem(PREFER_LOCAL_KEY, "1");
         setStatus("loading");
         setPreferLocal(true);
       },
     }),
-    [update, updateRoutine, updateDayIn, flush],
+    [update, updateRoutine, updateDayIn, flush, localModeAllowed],
   );
 
   const value = useMemo<AppContextValue>(
@@ -455,6 +459,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       data,
       mode,
       supabaseConfigured,
+      localModeAllowed,
       user,
       issues,
       saveError,
@@ -463,7 +468,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isFirstRun,
       actions,
     }),
-    [status, data, mode, supabaseConfigured, user, issues, saveError, lastSavedAt, fatalError, isFirstRun, actions],
+    [status, data, mode, supabaseConfigured, localModeAllowed, user, issues, saveError, lastSavedAt, fatalError, isFirstRun, actions],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

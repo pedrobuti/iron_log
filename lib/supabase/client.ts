@@ -41,6 +41,16 @@ export function isSupabaseConfigured(): boolean {
   return Boolean(url && anonKey && /^https?:\/\//.test(url)) && supabaseConfigWarning() === null;
 }
 
+/**
+ * Com o Supabase configurado, a conta é obrigatória por padrão.
+ * NEXT_PUBLIC_ALLOW_LOCAL_MODE=true reabilita a opção "usar modo local" na tela de login.
+ * Sem Supabase, o modo local é o único disponível.
+ */
+export function isLocalModeAllowed(): boolean {
+  if (!isSupabaseConfigured()) return true;
+  return process.env.NEXT_PUBLIC_ALLOW_LOCAL_MODE === "true";
+}
+
 let client: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient | null {

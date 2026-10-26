@@ -21,7 +21,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 export function SettingsPage() {
-  const { data, actions, mode, user, supabaseConfigured } = useApp();
+  const { data, actions, mode, user, supabaseConfigured, localModeAllowed } = useApp();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [restoreOpen, setRestoreOpen] = useState(false);
@@ -241,8 +241,8 @@ export function SettingsPage() {
           ) : null}
         </div>
         <p className="mt-3 text-xs text-muted">
-          {supabaseConfigured && mode === "local"
-            ? "O Supabase está configurado, mas você optou pelo modo local neste dispositivo. Recarregue a página após limpar a preferência para entrar com uma conta."
+          {supabaseConfigured && mode === "local" && localModeAllowed
+            ? "O Supabase está configurado, mas você optou pelo modo local neste dispositivo. Saia e entre com uma conta para sincronizar."
             : !supabaseConfigured
               ? "Para sincronizar entre dispositivos, configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY (ver README)."
               : "Importar um backup substitui todos os dados atuais."}

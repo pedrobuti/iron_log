@@ -55,6 +55,7 @@ Copie `.env.example` para `.env.local`. Nenhuma variável é obrigatória.
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | não | URL do projeto Supabase. Ativa o modo nuvem quando presente junto da chave. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | não | Chave pública **anon**. Nunca use a `service_role` no frontend. |
+| `NEXT_PUBLIC_ALLOW_LOCAL_MODE` | não | Com o Supabase configurado a conta é obrigatória. `true` volta a oferecer "Usar modo local neste dispositivo" na tela de login. |
 
 Chaves privadas nunca são lidas pelo app. Toda a segurança de dados no Supabase vem das políticas RLS (ver migration).
 
@@ -62,7 +63,7 @@ Chaves privadas nunca são lidas pelo app. Toda a segurança de dados no Supabas
 
 | | Modo local | Supabase |
 |---|---|---|
-| Quando | Variáveis ausentes, ou usuário escolheu "Usar modo local neste dispositivo" | Variáveis presentes e usuário autenticado |
+| Quando | Variáveis ausentes (ou `NEXT_PUBLIC_ALLOW_LOCAL_MODE=true` e o usuário escolheu "Usar modo local") | Variáveis presentes; login obrigatório |
 | Onde salva | `localStorage` com prefixo `ironlog:v1:` | Tabela `public.user_documents` (uma linha por chave) |
 | Sincroniza entre dispositivos | **Não** (o app deixa isso explícito na interface) | Sim |
 | Backup | Exportar/importar JSON em Perfil | Idem, além da nuvem |

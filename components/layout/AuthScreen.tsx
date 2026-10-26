@@ -8,7 +8,7 @@ import { Field, Input } from "@/components/ui/field";
 import { Segmented } from "@/components/ui/segmented";
 
 export function AuthScreen() {
-  const { actions } = useApp();
+  const { actions, localModeAllowed } = useApp();
   const [mode, setMode] = useState<"entrar" | "criar">("entrar");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -82,12 +82,18 @@ export function AuthScreen() {
             {mode === "entrar" ? "Entrar" : "Criar conta"}
           </Button>
         </form>
-        <div className="mt-6 border-t border-line pt-4">
-          <p className="mb-2 text-xs text-muted">Prefere não usar conta? Seus dados ficam só neste navegador, sem sincronização.</p>
-          <Button variant="outline" className="w-full" onClick={actions.useLocalModeInstead}>
-            <HardDrive className="h-4 w-4" /> Usar modo local neste dispositivo
-          </Button>
-        </div>
+        {localModeAllowed ? (
+          <div className="mt-6 border-t border-line pt-4">
+            <p className="mb-2 text-xs text-muted">Prefere não usar conta? Seus dados ficam só neste navegador, sem sincronização.</p>
+            <Button variant="outline" className="w-full" onClick={actions.useLocalModeInstead}>
+              <HardDrive className="h-4 w-4" /> Usar modo local neste dispositivo
+            </Button>
+          </div>
+        ) : (
+          <p className="mt-6 border-t border-line pt-4 text-xs text-muted">
+            É preciso uma conta para usar o IronLog: seus treinos ficam salvos na nuvem e acessíveis em qualquer dispositivo.
+          </p>
+        )}
       </div>
     </div>
   );
