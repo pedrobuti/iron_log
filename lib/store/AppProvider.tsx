@@ -29,7 +29,7 @@ import {
   type StorageAdapter,
   type StorageMode,
 } from "@/lib/storage";
-import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { getSupabaseClient, isSupabaseConfigured, supabaseConfigWarning } from "@/lib/supabase/client";
 import { createBackup, parseBackup, type ImportResult } from "@/lib/backup";
 import type { BackupFile } from "@/lib/validation/schemas";
 
@@ -135,7 +135,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         adapterRef.current = adapter;
         lastSavedRef.current = result.data;
         setData(result.data);
-        setIssues(result.issues);
+        const configWarning = supabaseConfigWarning();
+        setIssues(configWarning ? [configWarning, ...result.issues] : result.issues);
         setIsFirstRun(result.isFirstRun);
         setMode(adapter.mode);
         setStatus("ready");

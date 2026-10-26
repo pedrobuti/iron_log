@@ -179,6 +179,7 @@ No Windows (PowerShell): `$env:BASE_URL="http://localhost:3000"; node scripts/e2
 |---|---|---|
 | Tela de login aparece mas eu queria usar sem conta | Supabase configurado | Clique em "Usar modo local neste dispositivo" ou remova as variáveis do `.env.local` |
 | `Invalid login credentials` | E-mail/senha incorretos ou e-mail não confirmado | Confirme o e-mail ou desative a confirmação no Supabase durante testes |
+| `Forbidden use of secret API key in browser` ou aviso de "chave SECRETA" no topo | A chave `service_role`/`sb_secret_` foi colocada em `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Em Project Settings → API Keys, use a chave **Publishable** (`sb_publishable_...`) ou a **anon** legada (`eyJ...` com role `anon`). Atualize a variável na Vercel e faça redeploy. O app detecta a chave secreta e cai no modo local por segurança |
 | Dados não aparecem em outro navegador | Modo local não sincroniza | Exporte o backup JSON e importe no outro dispositivo, ou configure o Supabase |
 | `new row violates row-level security policy` | Migration não aplicada ou usuário sem sessão | Execute `supabase/migrations/0001_init.sql` e faça login novamente |
 | Banner "Armazenamento local cheio" | Cota do `localStorage` excedida | Exporte um backup e exclua sessões antigas |
