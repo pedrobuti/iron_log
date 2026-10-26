@@ -103,7 +103,12 @@ Para variáveis: `vercel env add NEXT_PUBLIC_SUPABASE_URL production` (repita pa
 
 ### Supabase + Vercel
 
-Em **Authentication → URL Configuration** no Supabase, adicione a URL do deploy (ex.: `https://ironlog.vercel.app`) em **Site URL** e **Redirect URLs** para que a confirmação de e-mail redirecione corretamente.
+Em **Authentication → URL Configuration** no Supabase:
+
+- **Site URL:** a URL de produção (ex.: `https://ironlog.vercel.app`). É para onde o link de confirmação de e-mail leva por padrão; se ficar em `http://localhost:3000`, o usuário cai no localhost após confirmar.
+- **Redirect URLs:** adicione a URL de produção, `http://localhost:3000/**` (desenvolvimento) e, se quiser previews, `https://*.vercel.app/**`.
+
+O app envia `emailRedirectTo` com a origem em que o cadastro foi feito, mas o Supabase só respeita origens presentes em Redirect URLs.
 
 ## 7. Funcionalidades
 

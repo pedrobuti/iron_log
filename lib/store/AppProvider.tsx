@@ -424,7 +424,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       signUp: async (email, password) => {
         const client = supabaseRef.current ?? getSupabaseClient();
         if (!client) return { error: "Supabase não configurado.", needsConfirmation: false };
-        const { data: res, error } = await client.auth.signUp({ email, password });
+        // Redireciona a confirmação de e-mail para a origem em que o cadastro foi feito
+        // (a URL precisa estar na lista "Redirect URLs" do Supabase).
+        const emailRedirectTo = typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
+        const { data: res, error } = await client.auth.signUp({ email, password, options: { emailRedirectTo } });
         if (error) return { error: error.message, needsConfirmation: false };
         return { error: null, needsConfirmation: !res.session };
       },
