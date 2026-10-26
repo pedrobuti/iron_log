@@ -36,9 +36,16 @@ export function createDefaultAppData(): AppData {
  * versões futuras aparecem sem apagar personalizações do usuário).
  */
 export function mergeDefaultExercises(stored: AppData["exercises"]): AppData["exercises"] {
-  const ids = new Set(stored.map((e) => e.id));
+  const defaultsById = new Map(DEFAULT_EXERCISES.map((e) => [e.id, e]));
+  // Backfill de campos adicionados em versões novas (ex.: demoId) sem sobrescrever personalizações.
+  const upgraded = stored.map((e) => {
+    const def = defaultsById.get(e.id);
+    if (!def || e.demoId !== undefined) return e;
+    return def.demoId ? { ...e, demoId: def.demoId } : e;
+  });
+  const ids = new Set(upgraded.map((e) => e.id));
   const missing = DEFAULT_EXERCISES.filter((e) => !ids.has(e.id));
-  return missing.length ? [...stored, ...missing] : stored;
+  return missing.length ? [...upgraded, ...missing] : upgraded;
 }
 
 /** Carrega e valida cada chave; chaves ausentes/corrompidas recebem o valor padrão. */

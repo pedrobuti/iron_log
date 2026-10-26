@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, History, Info, Lightbulb, Plus, Repeat, SkipForward, Trash2, Undo2, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Eye, History, Lightbulb, Plus, Repeat, SkipForward, Trash2, Undo2, X } from "lucide-react";
+import { ExerciseDemoDialog } from "@/components/exercises/ExerciseDemoDialog";
 import type { Exercise, SessionExercise, SetLog, Settings } from "@/types";
 import type { LoadSuggestion, PerformanceRef } from "@/lib/progression";
 import { createSet } from "@/lib/session";
@@ -49,7 +50,7 @@ export function WorkoutExerciseCard({
   onInvalidComplete,
 }: WorkoutExerciseCardProps) {
   const [showSuggestion, setShowSuggestion] = useState(true);
-  const [showTechnique, setShowTechnique] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
   const [collapsed, setCollapsed] = useState(se.skipped);
   const unit = settings.unit;
   const isTime = se.measure === "time";
@@ -246,16 +247,12 @@ export function WorkoutExerciseCard({
             onChange={(e) => onChange({ ...se, notes: e.target.value })}
           />
 
-          {exercise?.technique ? (
-            <div>
-              <button type="button" className="flex items-center gap-1 text-xs text-muted hover:text-fg" onClick={() => setShowTechnique((v) => !v)} aria-expanded={showTechnique}>
-                <Info className="h-3.5 w-3.5" /> {showTechnique ? "Ocultar" : "Ver"} dicas de técnica
-              </button>
-              {showTechnique ? <p className="mt-1 text-xs leading-relaxed text-muted">{exercise.technique}</p> : null}
-            </div>
-          ) : null}
-
           <div className="flex flex-wrap gap-1 border-t border-line pt-2">
+            {exercise?.demoId || exercise?.technique ? (
+              <Button variant="ghost" size="sm" onClick={() => setShowDemo(true)}>
+                <Eye className="h-4 w-4" /> Ver execução
+              </Button>
+            ) : null}
             <Button variant="ghost" size="sm" onClick={onReplace}>
               <Repeat className="h-4 w-4" /> Substituir
             </Button>
@@ -268,6 +265,7 @@ export function WorkoutExerciseCard({
           </div>
         </div>
       )}
+      <ExerciseDemoDialog open={showDemo} onClose={() => setShowDemo(false)} exerciseName={se.exerciseName} exercise={exercise} demoId={exercise?.demoId} />
     </article>
   );
 }

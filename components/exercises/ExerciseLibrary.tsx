@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Dumbbell, Pencil, Plus, Search, Trash2, Trophy } from "lucide-react";
+import { Dumbbell, Eye, Pencil, Plus, Search, Trash2, Trophy } from "lucide-react";
+import { ExerciseDemoDialog } from "./ExerciseDemoDialog";
+import { getDemo } from "@/data/exercise-demos";
 import type { Equipment, Exercise, MuscleGroup } from "@/types";
 import { EQUIPMENTS, MUSCLE_GROUPS } from "@/types";
 import { useApp } from "@/lib/store/AppProvider";
@@ -32,6 +34,7 @@ export function ExerciseLibrary() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Exercise | null>(null);
   const [details, setDetails] = useState<Exercise | null>(null);
+  const [demoFor, setDemoFor] = useState<Exercise | null>(null);
   const [deleting, setDeleting] = useState<Exercise | null>(null);
 
   const list = useMemo(
@@ -128,6 +131,11 @@ export function ExerciseLibrary() {
                   </span>
                   <span className="flex items-center gap-0.5">
                     {uses > 0 ? <span className="mr-1">na rotina ×{uses}</span> : null}
+                    {getDemo(e.demoId) ? (
+                      <Button variant="ghost" size="icon" aria-label={`Ver execução de ${e.name}`} onClick={() => setDemoFor(e)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    ) : null}
                     <Button variant="ghost" size="icon" aria-label={`Editar ${e.name}`} onClick={() => { setEditing(e); setFormOpen(true); }}>
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -162,6 +170,7 @@ export function ExerciseLibrary() {
                   defaultSets: values.defaultSets,
                   defaultRestSeconds: values.defaultRestSeconds,
                   technique: values.technique,
+                  demoId: values.demoId,
                 };
             actions.updateExercise(editing.id, patch);
             toast.success("Exercício atualizado.");
@@ -189,12 +198,13 @@ export function ExerciseLibrary() {
         }}
       />
 
-      {details ? <ExerciseDetails exercise={details} onClose={() => setDetails(null)} /> : null}
+      {details ? <ExerciseDetails exercise={details} onClose={() => setDetails(null)} onShowDemo={() => { setDemoFor(details); setDetails(null); }} /> : null}
+      <ExerciseDemoDialog open={demoFor !== null} onClose={() => setDemoFor(null)} exerciseName={demoFor?.name ?? ""} exercise={demoFor ?? undefined} demoId={demoFor?.demoId} />
     </div>
   );
 }
 
-function ExerciseDetails({ exercise, onClose }: { exercise: Exercise; onClose: () => void }) {
+function ExerciseDetails({ exercise, onClose, onShowDemo }: { exercise: Exercise; onClose: () => void; onShowDemo: () => void }) {
   const { data } = useApp();
   const history = useMemo(() => exerciseHistory(data.sessions, exercise.id).slice(0, 10), [data.sessions, exercise.id]);
   const rec = useMemo(() => computePersonalRecords(data.sessions).find((r) => r.exerciseId === exercise.id), [data.sessions, exercise.id]);
@@ -202,6 +212,11 @@ function ExerciseDetails({ exercise, onClose }: { exercise: Exercise; onClose: (
   return (
     <Dialog open onClose={onClose} title={exercise.name} description={`${MUSCLE_LABELS[exercise.primaryMuscle]} · ${EQUIPMENT_LABELS[exercise.equipment]} · ${MOVEMENT_LABELS[exercise.movementType]}`} size="md">
       <div className="space-y-4 text-sm">
+        {getDemo(exercise.demoId) ? (
+          <Button variant="secondary" size="sm" onClick={onShowDemo}>
+            <Eye className="h-4 w-4" /> Ver execução com fotos
+          </Button>
+        ) : null}
         <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
           <Info label="Séries" value={String(exercise.defaultSets)} />
           <Info label={exercise.measure === "time" ? "Segundos" : "Repetições"} value={`${exercise.defaultRepMin}–${exercise.defaultRepMax}`} />

@@ -34,6 +34,21 @@ try {
   const h1 = await page.getByRole("heading", { level: 1 }).textContent();
   check("tela de treino aberta", Boolean(h1), h1 ?? "");
 
+  // 2b. Exemplo de execução
+  await page.getByRole("button", { name: "Ver execução" }).first().click();
+  await page.getByRole("dialog").waitFor();
+  await page.waitForTimeout(800);
+  const imgOk = await page.evaluate(() => {
+    const imgs = [...document.querySelectorAll('[role="dialog"] img')];
+    return imgs.length === 2 && imgs.every((i) => i.complete && i.naturalWidth > 0);
+  });
+  check("diálogo de execução mostra 2 fotos carregadas", imgOk);
+  const steps = await page.locator('[role="dialog"] ol li').count();
+  check("passos em português no diálogo", steps >= 3, String(steps));
+  await page.screenshot({ path: OUT + "02b-execucao.png", fullPage: false });
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "detached" });
+
   // 3. Preencher série 1
   await page.getByLabel("Carga da série 1").first().fill("60");
   await page.getByLabel("Repetições da série 1").first().fill("10");

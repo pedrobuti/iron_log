@@ -7,6 +7,7 @@ import type { Exercise, MuscleGroup } from "@/types";
 import { EQUIPMENTS, MOVEMENT_TYPES, MUSCLE_GROUPS } from "@/types";
 import { exerciseFormSchema, type ExerciseFormValues } from "@/lib/validation/schemas";
 import { EQUIPMENT_LABELS, MOVEMENT_LABELS, MUSCLE_LABELS } from "@/lib/labels";
+import { EXERCISE_DEMOS } from "@/data/exercise-demos";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Switch, Textarea } from "@/components/ui/field";
@@ -24,6 +25,7 @@ const EMPTY: ExerciseFormValues = {
   defaultSets: 3,
   defaultRestSeconds: 90,
   technique: "",
+  demoId: undefined,
 };
 
 export function ExerciseForm({
@@ -66,6 +68,7 @@ export function ExerciseForm({
             defaultSets: initial.defaultSets,
             defaultRestSeconds: initial.defaultRestSeconds,
             technique: initial.technique ?? "",
+            demoId: initial.demoId,
           }
         : EMPTY,
     );
@@ -191,6 +194,22 @@ export function ExerciseForm({
             )}
           />
         </div>
+
+        <Field
+          label="Exemplo visual (fotos de execução)"
+          htmlFor="ex-demo"
+          className="sm:col-span-2"
+          hint="Escolha o exemplo mais parecido. As fotos vêm da base aberta free-exercise-db e aparecem no botão “Ver execução”."
+        >
+          <Select id="ex-demo" {...register("demoId", { setValueAs: (v) => (v === "" ? undefined : v) })}>
+            <option value="">Sem exemplo</option>
+            {EXERCISE_DEMOS.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
 
         <Field label="Observações técnicas" htmlFor="ex-technique" error={errors.technique?.message} className="sm:col-span-2">
           <Textarea id="ex-technique" {...register("technique")} placeholder="Dicas de execução, ajustes de máquina, pegada…" />

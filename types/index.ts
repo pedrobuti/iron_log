@@ -109,6 +109,8 @@ export interface Exercise {
   defaultRestSeconds: number;
   /** Observações técnicas livres. */
   technique?: string;
+  /** Referência a um exemplo visual em data/exercise-demos.ts (fotos + passos). */
+  demoId?: string;
   /** true quando criado pelo usuário (editável/excluível). */
   isCustom: boolean;
   createdAt: string;

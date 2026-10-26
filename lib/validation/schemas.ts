@@ -22,6 +22,7 @@ export const exerciseSchema = z.object({
   defaultSets: z.number().int().min(1).max(20),
   defaultRestSeconds: z.number().int().min(0).max(900),
   technique: z.string().max(600).optional(),
+  demoId: z.string().max(120).optional(),
   isCustom: z.boolean(),
   createdAt: isoDate,
   updatedAt: isoDate,
