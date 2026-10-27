@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS: Settings = {
   incrementUpperKg: 2.5,
   incrementLowerKg: 5,
   restTimerSound: true,
+  keepScreenOn: true,
 };
 
 export const APP_DATA_VERSION = 1;

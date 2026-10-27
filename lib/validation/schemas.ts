@@ -146,6 +146,7 @@ export const settingsSchema = z.object({
   incrementUpperKg: z.number().min(0.25).max(20),
   incrementLowerKg: z.number().min(0.25).max(50),
   restTimerSound: z.boolean().default(true),
+  keepScreenOn: z.boolean().default(true),
 });
 export type SettingsFormValues = z.infer<typeof settingsSchema>;
 

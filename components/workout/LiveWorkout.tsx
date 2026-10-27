@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Dumbbell, Flag, Plus, Timer, Trash2, Trophy } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BellRing, CheckCircle2, Dumbbell, Flag, Plus, Sun, Timer, Trash2, Trophy } from "lucide-react";
 import type { Exercise, SessionExercise, WorkoutSession } from "@/types";
 import { useApp, useExercisesById } from "@/lib/store/AppProvider";
 import { isoWeekday } from "@/lib/dates";
+import { useRestPush } from "@/lib/hooks/useRestPush";
+import { useWakeLock } from "@/lib/hooks/useWakeLock";
+import { isRestNotificationsEnabled } from "@/lib/push/client";
 import { lastPerformance, suggestLoad } from "@/lib/progression";
 import { detectNewRecords } from "@/lib/records";
 import { createSessionExercise, elapsedSeconds, sessionProgress, summarizeForFinish } from "@/lib/session";
@@ -73,6 +76,11 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [finishOpen, setFinishOpen] = useState(false);
   const [feeling, setFeeling] = useState<number | undefined>(undefined);
+  const restLabelRef = useRef<string | undefined>(undefined);
+  const restNotifier = useRestPush(restLabelRef);
+  const wakeLock = useWakeLock(settings.keepScreenOn);
+  // Só lido no cliente (esta tela nunca é pré-renderizada com sessão ativa).
+  const [notificationsOn] = useState(() => isRestNotificationsEnabled());
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(elapsedSeconds(session)), 1000);
@@ -170,7 +178,7 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
               <Timer className="h-3.5 w-3.5" /> {formatDuration(elapsed)} · {progress.done}/{progress.total} séries
             </p>
           </div>
-          <Button variant="ghost" size="sm" className="hover:text-danger" onClick={() => setDiscardOpen(true)}>
+          <Button variant="ghost" size="sm" className="hover:text-danger" aria-label="Descartar sessão" onClick={() => setDiscardOpen(true)}>
             <Trash2 className="h-4 w-4" /> <span className="hidden sm:inline">Descartar</span>
           </Button>
           <Button size="sm" onClick={() => setFinishOpen(true)}>
@@ -194,6 +202,7 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
             suggestion={suggestion}
             onChange={updateExercise}
             onSetCompleted={(secs) => {
+              restLabelRef.current = se.exerciseName;
               setRestDuration(secs);
               setRestToken((t) => t + 1);
             }}
@@ -217,13 +226,27 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
             onChange={(e) => actions.updateActiveSession((s) => ({ ...s, notes: e.target.value }))}
           />
         </Card>
-        <p className="text-center text-xs text-muted">Progresso salvo automaticamente neste dispositivo.</p>
+        <div className="space-y-1 text-center text-xs text-muted">
+          <p>Progresso salvo automaticamente.</p>
+          {wakeLock === "ativo" ? (
+            <p className="inline-flex items-center gap-1">
+              <Sun className="h-3.5 w-3.5" /> Tela mantida acesa durante o treino.
+            </p>
+          ) : null}
+          {!notificationsOn ? (
+            <p>
+              <Link href="/perfil" className="inline-flex items-center gap-1 underline-offset-2 hover:underline">
+                <BellRing className="h-3.5 w-3.5" /> Ativar notificação de fim de descanso
+              </Link>
+            </p>
+          ) : null}
+        </div>
       </div>
 
       {/* Cronômetro fixo */}
       <div className="fixed inset-x-0 bottom-0 z-30 px-3 pb-3 safe-bottom lg:left-64">
         <div className="mx-auto max-w-6xl">
-          <RestTimer duration={restDuration} onDurationChange={setRestDuration} startToken={restToken} sound={settings.restTimerSound} />
+          <RestTimer duration={restDuration} onDurationChange={setRestDuration} startToken={restToken} sound={settings.restTimerSound} notifier={restNotifier} />
         </div>
       </div>
 

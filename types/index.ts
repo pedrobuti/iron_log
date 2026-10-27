@@ -233,6 +233,8 @@ export interface Settings {
   incrementLowerKg: number;
   /** Timer de descanso toca um aviso sonoro ao final. */
   restTimerSound: boolean;
+  /** Mantém a tela acesa durante o treino ao vivo (Wake Lock, quando suportado). */
+  keepScreenOn: boolean;
 }
 
 /** Documento completo persistido. */

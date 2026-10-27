@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppProvider } from "@/lib/store/AppProvider";
 import { ToastProvider } from "@/components/ui/toast";
 import { AppShell } from "@/components/layout/AppShell";
+import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 
@@ -12,7 +13,15 @@ export const metadata: Metadata = {
   description: "Acompanhamento de treinos de musculação com foco em hipertrofia: rotina semanal, registro de séries, progressão de carga e recuperação.",
   applicationName: "IronLog",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg" },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  // Permite instalar como app na Tela de Início do iPhone/iPad (requisito para notificações no iOS).
+  appleWebApp: { capable: true, title: "IronLog", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
@@ -35,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={inter.variable}>
+        <ServiceWorkerRegister />
         <AppProvider>
           <ToastProvider>
             <AppShell>{children}</AppShell>

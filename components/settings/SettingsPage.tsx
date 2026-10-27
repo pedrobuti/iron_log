@@ -19,6 +19,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { RestNotificationsCard } from "./RestNotificationsCard";
 
 export function SettingsPage() {
   const { data, actions, mode, user, supabaseConfigured, localModeAllowed } = useApp();
@@ -152,6 +153,20 @@ export function SettingsPage() {
             <div className="sm:col-span-2">
               <Controller control={control} name="restTimerSound" render={({ field }) => <Switch checked={field.value} onChange={field.onChange} label="Aviso sonoro ao fim do descanso" description="Toca um bipe curto e vibra (quando suportado)." />} />
             </div>
+            <div className="sm:col-span-2">
+              <Controller
+                control={control}
+                name="keepScreenOn"
+                render={({ field }) => (
+                  <Switch
+                    checked={field.value}
+                    onChange={field.onChange}
+                    label="Manter a tela acesa durante o treino"
+                    description="Evita que o aparelho bloqueie e congele o cronômetro, o som e a vibração (Wake Lock, quando suportado)."
+                  />
+                )}
+              />
+            </div>
           </div>
         </Card>
 
@@ -206,6 +221,8 @@ export function SettingsPage() {
           </Button>
         </div>
       </form>
+
+      <RestNotificationsCard />
 
       <Card>
         <CardHeader

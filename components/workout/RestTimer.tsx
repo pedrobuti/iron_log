@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Minus, Pause, Play, Plus, SkipForward, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { RestNotifier } from "@/lib/push/client";
 import { formatDuration } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,8 @@ export interface RestTimerProps {
   /** Sempre que muda (e > 0), o timer reinicia e começa a contar com `duration`. */
   startToken: number;
   sound: boolean;
+  /** Integração com notificações (push remoto + notificação local em segundo plano). */
+  notifier?: RestNotifier;
 }
 
 function beep() {
@@ -36,7 +39,7 @@ function beep() {
   if ("vibrate" in navigator) navigator.vibrate?.([120, 60, 120]);
 }
 
-export function RestTimer({ duration, onDurationChange, startToken, sound }: RestTimerProps) {
+export function RestTimer({ duration, onDurationChange, startToken, sound, notifier }: RestTimerProps) {
   const [remaining, setRemaining] = useState(duration);
   const [running, setRunning] = useState(false);
   const [started, setStarted] = useState(false);
@@ -45,12 +48,14 @@ export function RestTimer({ duration, onDurationChange, startToken, sound }: Res
 
   const start = useCallback(
     (secs: number) => {
+      const end = Date.now() + secs * 1000;
       setRemaining(secs);
-      endAtRef.current = Date.now() + secs * 1000;
+      endAtRef.current = end;
       setRunning(true);
       setStarted(true);
+      notifier?.schedule(end);
     },
-    [],
+    [notifier],
   );
 
   // Disparo externo (série concluída)
@@ -64,7 +69,7 @@ export function RestTimer({ duration, onDurationChange, startToken, sound }: Res
   // Contagem baseada em timestamp: resiste a abas em segundo plano.
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => {
+    const tick = () => {
       const end = endAtRef.current;
       if (end === null) return;
       const left = Math.max(0, Math.round((end - Date.now()) / 1000));
@@ -73,10 +78,20 @@ export function RestTimer({ duration, onDurationChange, startToken, sound }: Res
         setRunning(false);
         endAtRef.current = null;
         if (sound) beep();
+        notifier?.finished();
       }
-    }, 250);
-    return () => clearInterval(id);
-  }, [running, sound]);
+    };
+    const id = setInterval(tick, 250);
+    // Ao voltar para a aba, atualiza na hora (o intervalo pode ter sido congelado).
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [running, sound, notifier]);
+
+  // Sair do treino com descanso em andamento cancela o aviso remoto.
+  useEffect(() => () => notifier?.cancel(), [notifier]);
 
   // Antes de iniciar, o mostrador reflete a duração configurada.
   const shown = started ? remaining : duration;
@@ -84,16 +99,20 @@ export function RestTimer({ duration, onDurationChange, startToken, sound }: Res
   function pause() {
     setRunning(false);
     endAtRef.current = null;
+    notifier?.cancel();
   }
   function resume() {
-    endAtRef.current = Date.now() + remaining * 1000;
+    const end = Date.now() + remaining * 1000;
+    endAtRef.current = end;
     setRunning(true);
+    notifier?.schedule(end);
   }
   function skip() {
     setRunning(false);
     setStarted(false);
     endAtRef.current = null;
     setRemaining(duration);
+    notifier?.cancel();
   }
   function adjust(delta: number) {
     if (!started) {
@@ -102,7 +121,11 @@ export function RestTimer({ duration, onDurationChange, startToken, sound }: Res
     }
     const next = Math.max(5, remaining + delta);
     setRemaining(next);
-    if (running) endAtRef.current = Date.now() + next * 1000;
+    if (running) {
+      const end = Date.now() + next * 1000;
+      endAtRef.current = end;
+      notifier?.schedule(end);
+    }
   }
 
   const finished = started && remaining === 0 && !running;
