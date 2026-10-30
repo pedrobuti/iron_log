@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BellRing, CheckCircle2, Dumbbell, Flag, Plus, Sun, Timer, Trash2, Trophy } from "lucide-react";
+import { AlertTriangle, BellRing, CheckCircle2, Dumbbell, Flag, Plus, Sun, Timer, Trash2, Trophy } from "lucide-react";
 import type { Exercise, SessionExercise, WorkoutSession } from "@/types";
 import { useApp, useExercisesById } from "@/lib/store/AppProvider";
-import { isoWeekday } from "@/lib/dates";
+import { formatDateTime, isoWeekday } from "@/lib/dates";
 import { useRestPush } from "@/lib/hooks/useRestPush";
 import { useWakeLock } from "@/lib/hooks/useWakeLock";
 import { isRestNotificationsEnabled } from "@/lib/push/client";
 import { lastPerformance, suggestLoad } from "@/lib/progression";
 import { detectNewRecords } from "@/lib/records";
-import { createSessionExercise, elapsedSeconds, sessionProgress, summarizeForFinish } from "@/lib/session";
+import { LONG_SESSION_SECONDS, MAX_SESSION_MINUTES, createSessionExercise, elapsedSeconds, sessionProgress, summarizeForFinish } from "@/lib/session";
 import { formatWeight } from "@/lib/units";
 import { formatDuration, formatMinutes } from "@/lib/utils";
 import { sessionEffectiveSets, sessionVolumeKg } from "@/lib/volume";
@@ -21,7 +21,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { RingProgress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/field";
+import { Field, Input, Textarea } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { ExercisePicker } from "@/components/exercises/ExercisePicker";
 import { RestTimer } from "./RestTimer";
@@ -76,6 +76,11 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [finishOpen, setFinishOpen] = useState(false);
   const [feeling, setFeeling] = useState<number | undefined>(undefined);
+  // Sessão esquecida aberta: o tempo decorrido não representa o treino; o usuário informa a duração real.
+  const forgotten = elapsed > LONG_SESSION_SECONDS;
+  const [manualMinutes, setManualMinutes] = useState<string>(String(settings.plannedDurationMin));
+  const manualMinutesNumber = Number(manualMinutes);
+  const manualValid = !forgotten || (Number.isFinite(manualMinutesNumber) && manualMinutesNumber >= 1 && manualMinutesNumber <= MAX_SESSION_MINUTES);
   const restLabelRef = useRef<string | undefined>(undefined);
   const restNotifier = useRestPush(restLabelRef);
   const wakeLock = useWakeLock(settings.keepScreenOn);
@@ -147,7 +152,8 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
   }
 
   function finish() {
-    const finished = actions.finishActiveSession(feeling);
+    if (!manualValid) return;
+    const finished = actions.finishActiveSession(feeling, forgotten ? Math.round(manualMinutesNumber * 60) : undefined);
     setFinishOpen(false);
     if (!finished) return;
     const records = detectNewRecords(finished, [...sessions, finished]);
@@ -299,16 +305,35 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
             <Button variant="secondary" onClick={() => setFinishOpen(false)}>
               Continuar treinando
             </Button>
-            <Button onClick={finish} data-autofocus>
+            <Button onClick={finish} data-autofocus disabled={!manualValid}>
               <CheckCircle2 className="h-4 w-4" /> Salvar treino
             </Button>
           </>
         }
       >
+        {forgotten ? (
+          <div className="mb-4 rounded-xl border border-warn/40 bg-warn/10 p-3">
+            <p className="flex items-start gap-2 text-sm text-warn">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              Esta sessão ficou aberta por {formatDuration(elapsed)}. Informe quanto tempo o treino durou de verdade; o início ({formatDateTime(session.startedAt)}) é mantido.
+            </p>
+            <Field label="Duração real (minutos)" htmlFor="finish-duration" className="mt-3" error={manualValid ? undefined : `Entre 1 e ${MAX_SESSION_MINUTES} minutos.`}>
+              <Input
+                id="finish-duration"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={MAX_SESSION_MINUTES}
+                value={manualMinutes}
+                onChange={(e) => setManualMinutes(e.target.value)}
+              />
+            </Field>
+          </div>
+        ) : null}
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <div className="rounded-xl bg-surface-2 p-3">
             <dt className="text-xs text-muted">Duração</dt>
-            <dd className="text-lg font-bold tabular">{formatDuration(elapsed)}</dd>
+            <dd className="text-lg font-bold tabular">{forgotten && manualValid ? formatMinutes(manualMinutesNumber) : formatDuration(elapsed)}</dd>
           </div>
           <div className="rounded-xl bg-surface-2 p-3">
             <dt className="text-xs text-muted">Séries válidas</dt>

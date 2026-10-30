@@ -59,8 +59,9 @@ export interface AppActions {
   startFreeSession: (name: string) => WorkoutSession;
   updateActiveSession: (updater: (s: WorkoutSession) => WorkoutSession) => void;
   discardActiveSession: () => void;
-  finishActiveSession: (feeling?: number) => WorkoutSession | null;
-  updateSession: (id: string, patch: Partial<Pick<WorkoutSession, "notes" | "feeling">>) => void;
+  /** `durationSeconds` substitui o tempo decorrido (ex.: sessão esquecida aberta). */
+  finishActiveSession: (feeling?: number, durationSeconds?: number) => WorkoutSession | null;
+  updateSession: (id: string, patch: Partial<Pick<WorkoutSession, "notes" | "feeling" | "durationSeconds" | "finishedAt">>) => void;
   updateSessionExerciseNotes: (sessionId: string, sessionExerciseId: string, notes: string) => void;
   deleteSession: (id: string) => void;
 
@@ -355,10 +356,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateActiveSession: (updater) =>
         update((d) => (d.activeSession ? { ...d, activeSession: updater(d.activeSession) } : d)),
       discardActiveSession: () => update((d) => ({ ...d, activeSession: null })),
-      finishActiveSession: (feeling) => {
+      finishActiveSession: (feeling, durationSeconds) => {
         const d = dataRef.current;
         if (!d.activeSession) return null;
-        const finished = finalizeSession(d.activeSession, feeling);
+        const finished = finalizeSession(d.activeSession, feeling, durationSeconds);
         update((cur) => ({ ...cur, activeSession: null, sessions: [...cur.sessions, finished] }));
         return finished;
       },

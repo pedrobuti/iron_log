@@ -103,14 +103,32 @@ export function summarizeForFinish(session: WorkoutSession): FinishSummary {
   return { completedSets, plannedSets, skippedExercises, exercisesWithoutSets };
 }
 
-/** Finaliza a sessão: marca exercícios sem séries válidas como ignorados e fixa a duração. */
-export function finalizeSession(session: WorkoutSession, feeling?: number): WorkoutSession {
+/** Sessões abertas por mais que isso provavelmente foram esquecidas: pedimos a duração real. */
+export const LONG_SESSION_SECONDS = 3 * 3600;
+export const MAX_SESSION_MINUTES = 600;
+
+/** Aplica uma duração informada manualmente, mantendo o início e recalculando o fim. */
+export function withDuration(session: WorkoutSession, durationSeconds: number): WorkoutSession {
+  const secs = Math.max(0, Math.min(MAX_SESSION_MINUTES * 60, Math.round(durationSeconds)));
+  const finishedAt = new Date(new Date(session.startedAt).getTime() + secs * 1000).toISOString();
+  return { ...session, durationSeconds: secs, finishedAt };
+}
+
+/**
+ * Finaliza a sessão: marca exercícios sem séries válidas como ignorados e fixa a duração.
+ * `durationSeconds` substitui o tempo decorrido (sessão esquecida aberta).
+ */
+export function finalizeSession(session: WorkoutSession, feeling?: number, durationSeconds?: number): WorkoutSession {
   const finishedAt = nowIso();
-  return {
+  const base = {
     ...session,
-    status: "concluida",
+    status: "concluida" as const,
     finishedAt,
     durationSeconds: elapsedSeconds(session, new Date(finishedAt)),
+  };
+  const timed = durationSeconds !== undefined ? withDuration(base, durationSeconds) : base;
+  return {
+    ...timed,
     feeling,
     exercises: session.exercises.map((se) => ({
       ...se,

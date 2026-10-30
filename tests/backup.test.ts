@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createBackup, parseBackup } from "@/lib/backup";
 import { createDefaultAppData } from "@/lib/storage";
 import { sessionsToCsv } from "@/lib/csv";
-import { createSessionFromDay, finalizeSession, sessionProgress, summarizeForFinish } from "@/lib/session";
+import { createSessionFromDay, finalizeSession, sessionProgress, summarizeForFinish, withDuration } from "@/lib/session";
 import { fromDisplayWeight, toDisplayWeight } from "@/lib/units";
 
 describe("backup JSON", () => {
@@ -47,6 +47,29 @@ describe("sessão", () => {
     expect(f.status).toBe("concluida");
     expect(f.exercises[0]?.skipped).toBe(false);
     expect(f.exercises.filter((e) => e.skipped)).toHaveLength(6);
+  });
+
+  it("aceita duração manual ao finalizar (sessão esquecida aberta)", () => {
+    const data = createDefaultAppData();
+    const s = createSessionFromDay(data.routine.days[0]!, data.exercises);
+    s.startedAt = new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString(); // aberta há 3 dias
+    const auto = finalizeSession(s);
+    expect(auto.durationSeconds).toBeGreaterThan(2 * 24 * 3600);
+    const fixed = finalizeSession(s, 4, 50 * 60);
+    expect(fixed.durationSeconds).toBe(3000);
+    expect(fixed.feeling).toBe(4);
+    expect(new Date(fixed.finishedAt!).getTime() - new Date(s.startedAt).getTime()).toBe(3000 * 1000);
+  });
+
+  it("withDuration recalcula o fim a partir do início e limita o intervalo", () => {
+    const data = createDefaultAppData();
+    const s = finalizeSession(createSessionFromDay(data.routine.days[0]!, data.exercises));
+    const w = withDuration(s, 45 * 60);
+    expect(w.durationSeconds).toBe(2700);
+    expect(w.startedAt).toBe(s.startedAt);
+    expect(new Date(w.finishedAt!).getTime() - new Date(w.startedAt).getTime()).toBe(2700 * 1000);
+    expect(withDuration(s, -5).durationSeconds).toBe(0);
+    expect(withDuration(s, 99 * 3600).durationSeconds).toBe(600 * 60);
   });
 });
 

@@ -16,11 +16,12 @@ import { sessionsToCsv } from "@/lib/csv";
 import { downloadTextFile } from "@/lib/download";
 import { formatWeight } from "@/lib/units";
 import { exerciseVolumeKg, musclesOf, sessionEffectiveSets, sessionVolumeKg, validSets } from "@/lib/volume";
+import { MAX_SESSION_MINUTES, withDuration } from "@/lib/session";
 import { cn, formatMinutes, formatNumber } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, Textarea } from "@/components/ui/field";
+import { Input, Select, Textarea } from "@/components/ui/field";
 import { Segmented } from "@/components/ui/segmented";
 import { Badge } from "@/components/ui/badge";
 import { Stat } from "@/components/ui/stat";
@@ -331,6 +332,17 @@ function SessionDetails({ session, onClose, onDelete }: { session: WorkoutSessio
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(session.notes);
   const [editingEx, setEditingEx] = useState<string | null>(null);
+  const [editingDuration, setEditingDuration] = useState(false);
+  const [durationMin, setDurationMin] = useState(String(Math.round(session.durationSeconds / 60)));
+  const durationNumber = Number(durationMin);
+  const durationValid = Number.isFinite(durationNumber) && durationNumber >= 1 && durationNumber <= MAX_SESSION_MINUTES;
+
+  function saveDuration() {
+    if (!durationValid) return;
+    const next = withDuration(session, durationNumber * 60);
+    actions.updateSession(session.id, { durationSeconds: next.durationSeconds, finishedAt: next.finishedAt });
+    setEditingDuration(false);
+  }
 
   return (
     <Dialog
@@ -351,6 +363,51 @@ function SessionDetails({ session, onClose, onDelete }: { session: WorkoutSessio
       }
     >
       <div className="space-y-4">
+        <div className="rounded-xl border border-line p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="label">Duração</p>
+              {!editingDuration ? (
+                <p className="text-sm tabular">
+                  {formatMinutes(session.durationSeconds / 60)}
+                  {session.durationSeconds > 3 * 3600 ? <span className="ml-2 text-xs text-warn">Sessão esquecida aberta? Corrija aqui.</span> : null}
+                </p>
+              ) : null}
+            </div>
+            {!editingDuration ? (
+              <Button variant="ghost" size="sm" onClick={() => setEditingDuration(true)}>
+                <Pencil className="h-3.5 w-3.5" /> Editar
+              </Button>
+            ) : null}
+          </div>
+          {editingDuration ? (
+            <div className="mt-2 flex flex-wrap items-end gap-2">
+              <div className="w-32">
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={MAX_SESSION_MINUTES}
+                  value={durationMin}
+                  onChange={(e) => setDurationMin(e.target.value)}
+                  aria-label="Duração em minutos"
+                  data-autofocus
+                />
+              </div>
+              <span className="pb-3 text-xs text-muted">minutos</span>
+              <div className="ml-auto flex gap-2">
+                <Button variant="ghost" size="sm" onClick={() => { setDurationMin(String(Math.round(session.durationSeconds / 60))); setEditingDuration(false); }}>
+                  Cancelar
+                </Button>
+                <Button size="sm" onClick={saveDuration} disabled={!durationValid}>
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          ) : null}
+          {editingDuration && !durationValid ? <p className="mt-1 text-xs text-danger">Entre 1 e {MAX_SESSION_MINUTES} minutos.</p> : null}
+        </div>
+
         <div className="rounded-xl border border-line p-3">
           <div className="mb-1 flex items-center justify-between">
             <p className="label">Observações da sessão</p>
